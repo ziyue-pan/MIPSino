@@ -4,11 +4,21 @@
 	"description": "A built-in MIPS assmbler for VScode.",
 	"version": "0.0.1",
 	"publisher": "ZiYue",
+	"homepage": "https://github.com/PAN-Ziyue/MIPSino",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/PAN-Ziyue/MIPSino"
+	},
+	"bugs": {
+		"url": "https://github.com/PAN-Ziyue/MIPSino/issues",
+		"email": "ziyuepan99@outlook.com"
+	},
 	"engines": {
 		"vscode": "^1.44.0"
 	},
 	"categories": [
-		"Other"
+		"Languages",
+		"Snippets"
 	],
 	"activationEvents": [
 		"onCommand:mipsino.helloWorld"
@@ -19,6 +29,35 @@
 			{
 				"command": "mipsino.helloWorld",
 				"title": "Hello World"
+			}
+		],
+		"languages": [
+			{
+				"id": "mips",
+				"aliases": [
+					"MIPS Assembly",
+					"mips"
+				],
+				"extensions": [
+					".s",
+					".mips",
+					".spim",
+					".asm"
+				],
+				"configuration": "./src/language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "mips",
+				"scopeName": "source.mips",
+				"path": "./src/mips.tmLanguage"
+			}
+		],
+		"snippets": [
+			{
+				"language": "mips",
+				"path": "./src/snippets.json"
 			}
 		]
 	},

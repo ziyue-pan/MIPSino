@@ -1,6 +1,6 @@
-# mipsino README
+# MIPSino
 
-This is the README for your extension "mipsino". After writing up a brief description, we recommend including the following sections.
+**MIPSino** is a built-in assembler and disassembler for MIPS architecture. 
 
 ## Features
 
