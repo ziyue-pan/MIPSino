@@ -21,14 +21,14 @@
 		"Snippets"
 	],
 	"activationEvents": [
-		"onCommand:mipsino.helloWorld"
+		"onCommand:mipsino.ToHex"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "mipsino.helloWorld",
-				"title": "Hello World"
+				"command": "mipsino.ToHex",
+				"title": "MIPSino: Assemble"
 			}
 		],
 		"languages": [
