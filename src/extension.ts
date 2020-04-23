@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 // import {check} from './assembler/check';
-import { assemble } from './assembler/assembler';
+import { Assemble } from './assembler/assembler';
 
 export function activate(context: vscode.ExtensionContext) {
 	// console.log('Congratulations, your extension "mipsino" is now active!');
@@ -12,8 +12,11 @@ export function activate(context: vscode.ExtensionContext) {
 		var full_path = editor!.document.fileName;
 		var file_name = full_path.replace(/^.*[\\\/]/, '');
 		var file_dir = full_path.substring(0, full_path.lastIndexOf('\\') + 1);
-		
-		var assembled_path = assemble(file_dir, file_name);
+		try {
+			var assembled_path = Assemble(file_dir, file_name);
+		} catch (e) {
+			console.log('Error:', e.stack);
+		}
 	});
 	context.subscriptions.push(disposable);
 }
