@@ -1,17 +1,19 @@
-// import {} from '../utils/register';
 import * as fs from 'fs';
-import { inst_set } from './instruction';
+import { inst_set, directive_set } from './utils';
+import { opcode_table, funct_table, reg_table } from './utils';
 
 enum field_set { data, text };
-
 
 export function Assemble(file_dir: string, file_name: string): string {
     var full_path = file_dir + file_name;
     var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'hex';
     var data_cursor = 0x10010000, text_cursor = 0x0040000;
-    var field: field_set = field_set.data;
+
     var label_table = new Map<string, number>();
     try {
+        var field: field_set = field_set.data;
+        var data_out: string[] = [];
+        var text_out: string[] = [];
         var in_str = fs.readFileSync(full_path, 'utf-8');
         var in_arr = in_str.replace(/#.*?\n|\t|\n|#.*?/g, ' ').replace(/:/g, ': ').replace(/(^\s*)|(\s*$)/g, '').split(/\s+/);
         in_arr.forEach((val, idx) => {
@@ -37,9 +39,46 @@ export function Assemble(file_dir: string, file_name: string): string {
                 label_table.set(val.substring(0, val.length - 1), field === field_set.data ? data_cursor : text_cursor);
             }
         });
-        label_table.forEach((value, key) => {
-            console.log(key, value);
-        });
+
+        for (let idx = 0; idx < in_arr.length;) {
+            if (directive_set.includes(in_arr[idx])) {
+                if (in_arr[idx] === '.data' && idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
+                    idx += 1;
+                } else if (in_arr[idx] === '.text' && idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
+                    idx += 1;
+                } else if (in_arr[idx] === '.byte') {
+                    idx += 1;
+                    data_out.push(parseInt(in_arr[idx]).toString(16).padStart(2, '0'));
+                } else if (in_arr[idx] === '.half') {
+                    idx += 1;
+                    var half_num = parseInt(in_arr[idx]).toString(16).padStart(4, '0');
+                    data_out.push(half_num.substring(2, 3));
+                    data_out.push(half_num.substring(0, 1));
+                } else if (in_arr[idx] === '.word') {
+                    idx += 1;
+                    var word_num = parseInt(in_arr[idx]).toString(16).padStart(8, '0');
+                    data_out.push(word_num.substring(6, 7));
+                    data_out.push(word_num.substring(4, 5));
+                    data_out.push(word_num.substring(2, 3));
+                    data_out.push(word_num.substring(0, 1));
+                }
+                idx += 1;
+            } else if (inst_set.includes(in_arr[idx])) {
+                if (['and', 'add', 'or', 'sub', 'slt'].includes(in_arr[idx])) {
+                    var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rs: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var rt: string = reg_table[in_arr[idx + 3]];
+                    var code: string = '00000' + rs + rt + rd + '00000' + funct_table[in_arr[idx]];
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 4;
+                } else if (in_arr[idx] === 'sll' || in_arr[idx] === 'srl') {
+                    var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var shamt: string = parseInt(in_arr[idx + 3]).toString(2).padStart(5, '0');
+                    var code: string = '0000000000' + rt + rd + shamt + funct_table[in_arr[idx]];
+                }
+            }
+        }
     } catch (e) {
         console.log('Error:', e.stack);
     }
