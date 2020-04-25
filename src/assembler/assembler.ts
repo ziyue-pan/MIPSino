@@ -5,6 +5,7 @@ import { opcode_table, funct_table, reg_table } from './utils';
 enum field_set { data, text };
 
 export function Assemble(file_dir: string, file_name: string): string {
+    console.log('Assembling');
     var full_path = file_dir + file_name;
     var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'hex';
     var data_cursor = 0x10010000, text_cursor = 0x0040000;
@@ -97,8 +98,12 @@ export function Assemble(file_dir: string, file_name: string): string {
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 2;
                 } else if (in_arr[idx] === 'lw' || in_arr[idx] === 'sw') {
-
-
+                    var rt: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset: number = parseInt(in_arr[idx + 2].substring(0, in_arr[idx + 2].lastIndexOf('(') - 1));
+                    var base: string = reg_table[in_arr[idx + 2].match(/\(([^)]+)\)/)![1]];
+                    var code: string = opcode_table[in_arr[idx]] + base + rt + offset.toString(2).padStart(16, '0');
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 3;
                 } else if (in_arr[idx] === 'beq' || in_arr[idx] === 'bne') {
                     var rs: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
@@ -117,8 +122,17 @@ export function Assemble(file_dir: string, file_name: string): string {
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 2;
                 }
+            } else if (label_table.has(in_arr[idx].substring(0, in_arr[idx].length - 1))) {
+                idx += 1;
             }
         }
+
+        data_out.forEach((val) => {
+            console.log(val);
+        });
+        text_out.forEach((val) => {
+            console.log(val);
+        });
     } catch (e) {
         console.log('Error:', e.stack);
     }
