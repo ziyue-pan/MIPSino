@@ -18,15 +18,17 @@ export const reg_table: { [key: string]: string } = {
     '$s2': '10010', '$s3': '10011', '$s4': '10100',
     '$s5': '10101', '$s6': '10110', '$s7': '10111',
     '$t8': '11000', '$t9': '11001', '$gp': '11100',
-    '$sp': '11101', '$fp': '11110', '$ra': '11111'
+    '$sp': '11101', '$fp': '11110', '$ra': '11111',
+    '$0': '00000'
 };
 
-export const opcode_table: { [key: string]: number } = {
-    'add': 0x0, 'addi': 0x8, 'and': 0x0, 'or': 0x0,
-    'ori': 0xd, 'sll': 0x0, 'srl': 0x0, 'sub': 0x0,
-    'lui': 0xf, 'slt': 0x0, 'slti': 0xa, 'beq': 0x4,
-    'bne': 0x5, 'j': 0x2, 'jal': 0x3, 'jr': 0x0,
-    'lw': 0x23, 'sw': 0x2b
+export const opcode_table: { [key: string]: string } = {
+    'add': '000000', 'addi': '001000', 'and': '000000',
+    'or': '000000', 'ori': '001101', 'sll': '000000',
+    'srl': '000000', 'sub': '000000', 'lui': '001111',
+    'slt': '000000', 'slti': '001010', 'beq': '000100',
+    'bne': '000101', 'j': '000010', 'jal': '000011',
+    'jr': '000000', 'lw': '100011', 'sw': '101011'
 };
 
 export const funct_table: { [key: string]: string } = {

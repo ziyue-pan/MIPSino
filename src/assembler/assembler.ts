@@ -68,14 +68,54 @@ export function Assemble(file_dir: string, file_name: string): string {
                     var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rs: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 3]];
-                    var code: string = '00000' + rs + rt + rd + '00000' + funct_table[in_arr[idx]];
+                    var code: string = '000000' + rs + rt + rd + '00000' + funct_table[in_arr[idx]];
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 4;
                 } else if (in_arr[idx] === 'sll' || in_arr[idx] === 'srl') {
                     var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var shamt: string = parseInt(in_arr[idx + 3]).toString(2).padStart(5, '0');
-                    var code: string = '0000000000' + rt + rd + shamt + funct_table[in_arr[idx]];
+                    var code: string = '00000000000' + rt + rd + shamt + funct_table[in_arr[idx]];
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 4;
+                } else if (['slti', 'addi', 'ori'].includes(in_arr[idx])) {
+                    var rt: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rs: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var imm: string = parseInt(in_arr[idx + 3]).toString(2).padStart(16, '0');
+                    var code: string = opcode_table[in_arr[idx]] + rs + rt + imm;
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 4;
+                } else if (in_arr[idx] === 'lui') {
+                    var rt: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var imm: string = parseInt(in_arr[idx + 3]).toString(2).padStart(16, '0');
+                    var code: string = '00111100000' + rt + imm;
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 3;
+                } else if (in_arr[idx] === 'jr') {
+                    var rs: string = reg_table[in_arr[idx + 1]];
+                    var code: string = '000000' + rs + '1000'.padStart(21, '0');
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 2;
+                } else if (in_arr[idx] === 'lw' || in_arr[idx] === 'sw') {
+
+
+                } else if (in_arr[idx] === 'beq' || in_arr[idx] === 'bne') {
+                    var rs: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset: number = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
+                    var code: string = opcode_table[in_arr[idx]] + rs + rt + (offset / 4 - 1).toString(2).padStart(16, '0');
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 4;
+                } else if (in_arr[idx] === 'j' || in_arr[idx] === 'jal') {
+                    var target: string;
+                    if (label_table.has(in_arr[idx + 1])) {
+                        target = label_table.get(in_arr[idx + 1])!.toString(2).padStart(28, '0');
+                    } else {
+                        target = parseInt(in_arr[idx + 1]).toString(2).padStart(28, '0');
+                    }
+                    var code: string = opcode_table[in_arr[idx]] + target.substring(0, 25);
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 2;
                 }
             }
         }
