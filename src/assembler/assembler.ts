@@ -2,8 +2,10 @@ import * as fs from 'fs';
 import { inst_set, directive_set } from './utils';
 import { opcode_table, funct_table, reg_table } from './utils';
 
+// enum to represent current field
 enum field_set { data, text };
 
+// function to transfer integer to binary string with givin width
 function ToBin(dec: number, width: number): string {
     if (dec >= 0) {
         return (dec >>> 0).toString(2).padStart(width, '0');
@@ -12,11 +14,11 @@ function ToBin(dec: number, width: number): string {
     }
 }
 
+// main assembling function
 export function Assemble(file_dir: string, file_name: string): string {
-    console.log('Assembling');
     var full_path = file_dir + file_name;
     var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'hex';
-    var data_cursor = 0x10010000, text_cursor = 0x00400000, current = 0x00400000;
+    var data_cursor = 0, text_cursor = 0, data_start = 0, text_start = 0;
 
     var label_table = new Map<string, number>();
     try {
@@ -25,16 +27,12 @@ export function Assemble(file_dir: string, file_name: string): string {
         var text_out: string[] = [];
         var in_str = fs.readFileSync(full_path, 'utf-8');
         var in_arr = in_str.replace(/#.*?\n|\t|\n|#.*?/g, ' ').replace(/:/g, ': ').replace(/(^\s*)|(\s*$)/g, '').split(/\s+/);
-        in_arr.forEach((val, idx) => {
+        in_arr.forEach((val) => {
             if (val === '.data') {
-                if (idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    data_cursor = parseInt(in_arr[idx], 16);
-                }
+                data_cursor = data_start = Math.ceil(text_cursor / 4.0) * 4;
                 field = field_set.data;
             } else if (val === '.text') {
-                if (idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    current = text_cursor = parseInt(in_arr[idx], 16);
-                }
+                text_cursor = text_start = Math.ceil(data_cursor / 4.0) * 4;
                 field = field_set.text;
             } else if (val === '.byte') {
                 data_cursor += 1;
@@ -49,13 +47,13 @@ export function Assemble(file_dir: string, file_name: string): string {
             }
         });
 
-
+        var current: number = data_start;
         for (let idx = 0; idx < in_arr.length;) {
             if (directive_set.includes(in_arr[idx])) {
-                if (in_arr[idx] === '.data' && idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    idx += 1;
+                if (in_arr[idx] === '.data') {
+                    current = data_start;
                 } else if (in_arr[idx] === '.text' && idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    idx += 1;
+                    current = text_start;
                 } else if (in_arr[idx] === '.byte') {
                     idx += 1;
                     data_out.push(parseInt(in_arr[idx]).toString(16).padStart(2, '0'));
@@ -136,17 +134,30 @@ export function Assemble(file_dir: string, file_name: string): string {
                 idx += 1;
             }
         }
-        console.log('This is data area:');
-        data_out.forEach((val) => {
-            console.log(val);
+
+        // output to .hex file
+        var outstream = fs.createWriteStream(assembled_path);
+        outstream.on('error', (err) => {
+            throw err;
         });
-        console.log('This is text area:');
-        text_out.forEach((val) => {
-            console.log(val);
-        });
+        if (text_start > data_start) {
+            data_out.forEach((i) => {
+                outstream.write(i + '\n');
+            });
+            text_out.forEach((i) => {
+                outstream.write(i + '\n');
+            });
+        } else {
+            text_out.forEach((i) => {
+                outstream.write(i + '\n');
+            });
+            data_out.forEach((i) => {
+                outstream.write(i + '\n');
+            });
+        }
+        outstream.end();
     } catch (e) {
         console.log('Error:', e.stack);
     }
-
     return assembled_path;
 }
