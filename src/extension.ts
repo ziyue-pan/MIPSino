@@ -14,6 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
 		var file_dir = full_path.substring(0, full_path.lastIndexOf('\\') + 1);
 		try {
 			var assembled_path = Assemble(file_dir, file_name);
+			vscode.window.showInformationMessage('Assembling Done!');
+			vscode.workspace.openTextDocument(assembled_path).then(doc => {
+				vscode.window.showTextDocument(doc);
+			});
 		} catch (e) {
 			console.log('Error:', e.stack);
 		}
