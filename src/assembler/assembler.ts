@@ -4,11 +4,19 @@ import { opcode_table, funct_table, reg_table } from './utils';
 
 enum field_set { data, text };
 
+function ToBin(dec: number, width: number): string {
+    if (dec >= 0) {
+        return (dec >>> 0).toString(2).padStart(width, '0');
+    } else {
+        return (dec >>> 0).toString(2).substring(32 - width, 32);
+    }
+}
+
 export function Assemble(file_dir: string, file_name: string): string {
     console.log('Assembling');
     var full_path = file_dir + file_name;
     var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'hex';
-    var data_cursor = 0x10010000, text_cursor = 0x0040000;
+    var data_cursor = 0x10010000, text_cursor = 0x00400000, current = 0x00400000;
 
     var label_table = new Map<string, number>();
     try {
@@ -25,7 +33,7 @@ export function Assemble(file_dir: string, file_name: string): string {
                 field = field_set.data;
             } else if (val === '.text') {
                 if (idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    text_cursor = parseInt(in_arr[idx], 16);
+                    current = text_cursor = parseInt(in_arr[idx], 16);
                 }
                 field = field_set.text;
             } else if (val === '.byte') {
@@ -40,6 +48,7 @@ export function Assemble(file_dir: string, file_name: string): string {
                 label_table.set(val.substring(0, val.length - 1), field === field_set.data ? data_cursor : text_cursor);
             }
         });
+
 
         for (let idx = 0; idx < in_arr.length;) {
             if (directive_set.includes(in_arr[idx])) {
@@ -108,28 +117,30 @@ export function Assemble(file_dir: string, file_name: string): string {
                     var rs: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var offset: number = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    var code: string = opcode_table[in_arr[idx]] + rs + rt + (offset / 4 - 1).toString(2).padStart(16, '0');
+                    var code: string = opcode_table[in_arr[idx]] + rs + rt + ToBin(((offset - current) / 4 - 1), 16);
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 4;
                 } else if (in_arr[idx] === 'j' || in_arr[idx] === 'jal') {
                     var target: string;
                     if (label_table.has(in_arr[idx + 1])) {
-                        target = label_table.get(in_arr[idx + 1])!.toString(2).padStart(28, '0');
+                        target = (label_table.get(in_arr[idx + 1])! / 4).toString(2).padStart(26, '0');
                     } else {
-                        target = parseInt(in_arr[idx + 1]).toString(2).padStart(28, '0');
+                        target = (parseInt(in_arr[idx + 1]) / 4).toString(2).padStart(26, '0');
                     }
-                    var code: string = opcode_table[in_arr[idx]] + target.substring(0, 25);
+                    var code: string = opcode_table[in_arr[idx]] + target;
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 2;
                 }
+                current += 4;
             } else if (label_table.has(in_arr[idx].substring(0, in_arr[idx].length - 1))) {
                 idx += 1;
             }
         }
-
+        console.log('This is data area:');
         data_out.forEach((val) => {
             console.log(val);
         });
+        console.log('This is text area:');
         text_out.forEach((val) => {
             console.log(val);
         });
