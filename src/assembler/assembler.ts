@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import { inst_set, directive_set } from './utils';
-import { opcode_table, funct_table, reg_table } from './utils';
+import { inst_set, directive_set } from './asm_utils';
+import { opcode_table, funct_table, reg_table } from './asm_utils';
 
 // enum to represent current field
 enum field_set { data, text };
