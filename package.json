@@ -21,7 +21,8 @@
 		"Snippets"
 	],
 	"activationEvents": [
-		"onCommand:mipsino.ToHex"
+		"onCommand:mipsino.ToHex",
+		"onCommand:mipsino.ToAsm"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -29,6 +30,10 @@
 			{
 				"command": "mipsino.ToHex",
 				"title": "MIPSino: Assemble"
+			},
+			{
+				"command": "mipsino.ToAsm",
+				"title": "MIPSino: Disassemble"
 			}
 		],
 		"languages": [
@@ -41,7 +46,6 @@
 				"extensions": [
 					".s",
 					".mips",
-					".spim",
 					".asm"
 				],
 				"configuration": "./src/language-configuration.json"

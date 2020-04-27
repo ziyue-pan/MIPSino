@@ -8,6 +8,10 @@ export const directive_set: string[] = [
     '.byte', '.half', '.word', '.data', '.text'
 ];
 
+export const pseudo_set: string[] = [
+    'bgt', 'bge', 'blt', 'ble', 'move'
+];
+
 export const reg_table: { [key: string]: string } = {
     '$zero': '00000', '$at': '00001', '$v0': '00010',
     '$v1': '00011', '$a0': '00100', '$a1': '00101',
