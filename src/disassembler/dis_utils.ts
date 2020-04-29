@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 export const reg_table: { [key: string]: string } = {
     '00000': '$zero', '00001': '$at', '00010': '$v0',
     '00011': '$v1', '00100': '$a0', '00101': '$a1',
@@ -16,4 +9,17 @@ export const reg_table: { [key: string]: string } = {
     '10101': '$s5', '10110': '$s6', '10111': '$s7',
     '11000': '$t8', '11001': '$t9', '11100': '$gp',
     '11101': '$sp', '11110': '$fp', '11111': '$ra'
+};
+
+export const opcode_table: { [key: string]: string } = {
+    '000000': 'R-Type', '001000': 'addi', '001101': 'ori',
+    '001111': 'lui', '001010': 'slti', '000100': 'beq',
+    '000101': 'bne', '000010': 'j', '000011': 'jal',
+    '100011': 'lw', '101011': 'sw'
+};
+
+export const funct_table: { [key: string]: string } = {
+    'add': '100000', 'and': '100100', 'or': '100101',
+    'sll': '000000', 'srl': '000010', 'sub': '100010',
+    'slt': '101010', 'jr': '001000'
 };
