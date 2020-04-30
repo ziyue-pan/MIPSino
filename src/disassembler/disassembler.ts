@@ -12,6 +12,25 @@ export function Disassemble(file_dir: string, file_name: string): string {
         var in_str = fs.readFileSync(full_path, 'utf-8');
         var in_arr = in_str.split(/\n/);
         var asm_out: string[] = [];
+        var label_table = new Map<number, string>();
+
+        in_arr.forEach((val, idx) => {
+            var code = parseInt(val, 16).toString(2).padStart(32, '0');
+            var oper = opcode_table[code.substr(0, 6)];
+            if (oper === 'jal' || oper === 'j') {
+                var target = parseInt(code.substr(6, 26) + '00', 2);
+                label_table.set(target, 'TARGET_0x' + target.toString(16));
+            } else if (oper === 'beq' || oper === 'bne') {
+                var offset = parseInt(code.substr(16, 16), 2);
+                var label = 
+
+            }
+        });
+
+
+
+
+
         in_arr.forEach((val) => {
             var code = parseInt(val, 16).toString(2).padStart(32, '0');
             var opcode = code.substr(0, 6);
@@ -33,9 +52,15 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 }
             } else {
                 if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
-
+                    var rs = reg_table[code.substr(6, 5)];
+                    var rt = reg_table[code.substr(11, 5)];
+                    var imm = '0x' + parseInt(code.substr(16, 16), 2).toString(16);
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm);
                 } else if (['beq', 'bne'].includes(opcode_table[opcode])) {
-
+                    var rs = reg_table[code.substr(6, 5)];
+                    var rt = reg_table[code.substr(11, 5)];
+                    var offset = '0x' + parseInt(code.substr(16, 16), 2).toString(16);
+                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + offset);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
 
                 } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
