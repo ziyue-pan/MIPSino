@@ -3,6 +3,17 @@ import { reg_table, opcode_table, funct_table } from './dis_utils';
 
 enum field_set { data, text };
 
+function ToDec(bin: string): number {
+    if (bin[0] === '0') {
+        return parseInt(bin, 2);
+    } else {
+        var rst = parseInt(bin, 2);
+        rst <<= 16;
+        rst >>= 16;
+        return rst;
+    }
+}
+
 // main disassembling function
 export function Disassemble(file_dir: string, file_name: string): string {
     var full_path = file_dir + file_name;
@@ -21,15 +32,11 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 var target = parseInt(code.substr(6, 26) + '00', 2);
                 label_table.set(target, 'TARGET_0x' + target.toString(16));
             } else if (oper === 'beq' || oper === 'bne') {
-                var offset = parseInt(code.substr(16, 16), 2);
-                var label = 
-
+                var offset = ToDec(code.substr(16, 16));
+                var label = 4*idx +4 + offset;
+                label_table.set(label, 'LABEL_0x'+label.toString(16));
             }
         });
-
-
-
-
 
         in_arr.forEach((val) => {
             var code = parseInt(val, 16).toString(2).padStart(32, '0');
