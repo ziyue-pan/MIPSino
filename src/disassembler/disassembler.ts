@@ -33,12 +33,17 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 label_table.set(target, 'TARGET_0x' + target.toString(16));
             } else if (oper === 'beq' || oper === 'bne') {
                 var offset = ToDec(code.substr(16, 16));
-                var label = 4*idx +4 + offset;
-                label_table.set(label, 'LABEL_0x'+label.toString(16));
+                var label = 4 * idx + 4 + offset;
+                label_table.set(label, 'LABEL_0x' + label.toString(16));
             }
         });
 
-        in_arr.forEach((val) => {
+
+        in_arr.forEach((val, idx) => {
+            if (label_table.has(4 * idx)) {
+                asm_out.push(label_table.get(4 * idx)!);
+            }
+
             var code = parseInt(val, 16).toString(2).padStart(32, '0');
             var opcode = code.substr(0, 6);
             if (opcode === '000000') {
@@ -69,7 +74,8 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     var offset = '0x' + parseInt(code.substr(16, 16), 2).toString(16);
                     asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + offset);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
-
+                    var target = parseInt(code.substr(6, 26), 2);
+                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
                 } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
 
                 } else if (opcode_table[opcode] === 'lui') {
@@ -77,6 +83,10 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 }
             }
         });
+
+        asm_out.forEach((val) => {
+            console.log(val);
+        })
     } catch (e) {
         console.log('Error:', e.stack);
     }
