@@ -42,7 +42,7 @@ export function Disassemble(file_dir: string, file_name: string): string {
             console.log(val, key);
         });
         console.log('');
-        
+
         in_arr.forEach((val, idx) => {
             if (label_table.has(4 * idx)) {
                 asm_out.push(label_table.get(4 * idx)! + ':');
@@ -80,9 +80,12 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     var target = parseInt(code.substr(6, 26), 2);
                     asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
                 } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
-
+                    var base = reg_table[code.substr(6, 5)];
+                    var rt = reg_table[code.substr(11, 5)];
+                    var offset = ToDec(code.substr(16, 16));
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ')');
                 } else if (opcode_table[opcode] === 'lui') {
-
+                    
                 }
             }
         });
