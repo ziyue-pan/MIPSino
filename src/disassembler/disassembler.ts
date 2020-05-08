@@ -38,10 +38,10 @@ export function Disassemble(file_dir: string, file_name: string): string {
             }
         });
 
-        label_table.forEach((val, key) => {
-            console.log(val, key);
-        });
-        console.log('');
+        // label_table.forEach((val, key) => {
+        //     console.log(val, key);
+        // });
+        // console.log('');
 
         in_arr.forEach((val, idx) => {
             if (label_table.has(4 * idx)) {
@@ -55,44 +55,46 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt);
+                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt + ' # PC-Value: ' + idx * 4);
                 } else if (['sll', 'srl'].includes(funct_table[funct])) {
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
                     var shamt = code.substr(21, 5);
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rt + ', ' + shamt);
+                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rt + ', ' + shamt + ' # PC-Value: ' + idx * 4);
                 } else if (funct_table[funct] === 'jr') {
                     var rs = reg_table[code.substr(6, 5)];
-                    asm_out.push('jr ' + rs);
+                    asm_out.push('jr ' + rs + ' # PC-Value: ' + idx * 4);
                 }
             } else {
                 if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var imm = parseInt(code.substr(16, 16), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm);
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm + ' # PC-Value: ' + idx * 4);
                 } else if (['beq', 'bne'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
-                    var offset = ToDec(code.substr(16, 16));
-                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label_table.get(offset + 4 * idx + 4));
+                    var label = label_table.get(ToDec(code.substr(16, 16)) + 4 * idx + 4);
+                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label + ' # PC-Value: ' + idx * 4);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
+                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4) + ' # PC-Value: ' + idx * 4);
                 } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
                     var base = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var offset = ToDec(code.substr(16, 16));
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ')');
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ') # PC-Value: ' + idx * 4);
                 } else if (opcode_table[opcode] === 'lui') {
-                    
+                    var rt = reg_table[code.substr(11, 5)];
+                    var imm = ToDec(code.substr(16, 16)) << 16;
+                    asm_out.push('lui ' + rt + ', ' + imm + ' # PC-Value: ' + idx * 4);
                 }
             }
         });
 
         asm_out.forEach((val) => {
             console.log(val);
-        })
+        });
     } catch (e) {
         console.log('Error:', e.stack);
     }
