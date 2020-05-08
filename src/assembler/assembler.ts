@@ -16,10 +16,12 @@ function ToBin(dec: number, width: number): string {
 
 // main assembling function
 export function Assemble(file_dir: string, file_name: string): string {
+    var date = new Date().toISOString();
+    var stamp = '-' + date.substring(0, date.lastIndexOf('.')).replace(/:/g, '-');
     var full_path = file_dir + file_name;
-    var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'hex';
+    var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.')) + stamp + '.hex';
     var data_cursor = 0, text_cursor = 0, data_start = 0, text_start = 0;
-    
+
     var label_table = new Map<string, number>();
     try {
         var field: field_set = field_set.data;

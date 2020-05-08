@@ -16,8 +16,10 @@ function ToDec(bin: string): number {
 
 // main disassembling function
 export function Disassemble(file_dir: string, file_name: string): string {
+    var date = new Date().toISOString();
+    var stamp = '-' + date.substring(0, date.lastIndexOf('.')).replace(/:/g, '-');
     var full_path = file_dir + file_name;
-    var disassembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.') + 1) + 'asm';
+    var disassembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.')) + stamp + '.asm';
 
     try {
         var in_str = fs.readFileSync(full_path, 'utf-8');
