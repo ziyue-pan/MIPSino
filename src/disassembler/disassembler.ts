@@ -38,12 +38,15 @@ export function Disassemble(file_dir: string, file_name: string): string {
             }
         });
 
-
+        label_table.forEach((val, key) => {
+            console.log(val, key);
+        });
+        console.log('');
+        
         in_arr.forEach((val, idx) => {
             if (label_table.has(4 * idx)) {
-                asm_out.push(label_table.get(4 * idx)!);
+                asm_out.push(label_table.get(4 * idx)! + ':');
             }
-
             var code = parseInt(val, 16).toString(2).padStart(32, '0');
             var opcode = code.substr(0, 6);
             if (opcode === '000000') {
@@ -66,13 +69,13 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
-                    var imm = '0x' + parseInt(code.substr(16, 16), 2).toString(16);
+                    var imm = parseInt(code.substr(16, 16), 2);
                     asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm);
                 } else if (['beq', 'bne'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
-                    var offset = '0x' + parseInt(code.substr(16, 16), 2).toString(16);
-                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + offset);
+                    var offset = ToDec(code.substr(16, 16));
+                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label_table.get(offset + 4 * idx + 4));
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
                     asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));

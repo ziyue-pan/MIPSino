@@ -115,7 +115,7 @@ export function Assemble(file_dir: string, file_name: string): string {
                     var rs: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var offset: number = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    var code: string = opcode_table[in_arr[idx]] + rs + rt + ToBin(((offset - current) / 4 - 1), 16);
+                    var code: string = opcode_table[in_arr[idx]] + rs + rt + ToBin(((offset - current) - 4), 16);
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 4;
                 } else if (in_arr[idx] === 'j' || in_arr[idx] === 'jal') {

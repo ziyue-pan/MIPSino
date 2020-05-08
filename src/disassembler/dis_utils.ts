@@ -19,7 +19,7 @@ export const opcode_table: { [key: string]: string } = {
 };
 
 export const funct_table: { [key: string]: string } = {
-    'add': '100000', 'and': '100100', 'or': '100101',
-    'sll': '000000', 'srl': '000010', 'sub': '100010',
-    'slt': '101010', 'jr': '001000'
+    '100000': 'add', '100100': 'and', '100101': 'or',
+    '000000': 'sll', '000010': 'srl', '100010': 'sub',
+    '101010': 'slt', '001000': 'jr'
 };
