@@ -16,10 +16,8 @@ function ToDec(bin: string): number {
 
 // main disassembling function
 export function Disassemble(file_dir: string, file_name: string): string {
-    var date = new Date().toISOString();
-    var stamp = '-' + date.substring(0, date.lastIndexOf('.')).replace(/:/g, '-');
     var full_path = file_dir + file_name;
-    var disassembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.')) + stamp + '.asm';
+    var disassembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.')) + '.asm';
 
     try {
         var in_str = fs.readFileSync(full_path, 'utf-8');
@@ -57,46 +55,57 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt + ' # PC-Value: ' + idx * 4);
+                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt);
                 } else if (['sll', 'srl'].includes(funct_table[funct])) {
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
                     var shamt = code.substr(21, 5);
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rt + ', ' + shamt + ' # PC-Value: ' + idx * 4);
+                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rt + ', ' + shamt);
                 } else if (funct_table[funct] === 'jr') {
                     var rs = reg_table[code.substr(6, 5)];
-                    asm_out.push('jr ' + rs + ' # PC-Value: ' + idx * 4);
+                    asm_out.push('jr ' + rs);
                 }
             } else {
                 if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var imm = parseInt(code.substr(16, 16), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm + ' # PC-Value: ' + idx * 4);
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm);
                 } else if (['beq', 'bne'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var label = label_table.get(ToDec(code.substr(16, 16)) + 4 * idx + 4);
-                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label + ' # PC-Value: ' + idx * 4);
+                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4) + ' # PC-Value: ' + idx * 4);
+                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
                 } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
                     var base = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var offset = ToDec(code.substr(16, 16));
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ') # PC-Value: ' + idx * 4);
+                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ')');
                 } else if (opcode_table[opcode] === 'lui') {
                     var rt = reg_table[code.substr(11, 5)];
                     var imm = ToDec(code.substr(16, 16)) << 16;
-                    asm_out.push('lui ' + rt + ', ' + imm + ' # PC-Value: ' + idx * 4);
+                    asm_out.push('lui ' + rt + ', ' + imm);
                 }
             }
         });
 
-        asm_out.forEach((val) => {
-            console.log(val);
+        var outstream = fs.createWriteStream(disassembled_path);
+        outstream.on('error', (err) => {
+            throw err;
         });
+        var idx: number = 0;
+        asm_out.forEach((val) => {
+            if (val.substr(val.length - 1, 1) === ':') {
+                outstream.write(val + '\n');
+            } else {
+                outstream.write(val + ' # PC-Value: ' + idx + '\n');
+                idx += 4;
+            }
+        });
+        outstream.end();
     } catch (e) {
         console.log('Error:', e.stack);
     }

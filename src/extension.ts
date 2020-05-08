@@ -37,9 +37,9 @@ export function activate(context: vscode.ExtensionContext) {
 			if (suffix === '.hex') {
 				var disassembled_path = Disassemble(file_dir, file_name);
 				vscode.window.showInformationMessage('Disassembly Done!');
-				// vscode.workspace.openTextDocument(disassembled_path).then(doc => {
-				// 	vscode.window.showTextDocument(doc);
-				// });
+				vscode.workspace.openTextDocument(disassembled_path).then(doc => {
+					vscode.window.showTextDocument(doc);
+				});
 			} else {
 				vscode.window.showErrorMessage(suffix + ' file can not be disassembled');
 			}
