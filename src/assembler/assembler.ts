@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { inst_set, directive_set } from './asm_utils';
+import { inst_set, directive_set, pseudo_set } from './asm_utils';
 import { opcode_table, funct_table, reg_table } from './asm_utils';
 
 // enum to represent current field
@@ -40,8 +40,10 @@ export function Assemble(file_dir: string, file_name: string): string {
                 data_cursor += 2;
             } else if (val === '.word') {
                 data_cursor += 4;
-            } else if (inst_set.includes(val)) {
+            } else if (inst_set.includes(val) || val === 'move') {
                 text_cursor += 4;
+            } else if (pseudo_set.includes(val)) {
+                text_cursor += 8;
             } else if (val[val.length - 1] === ':') {
                 label_table.set(val.substring(0, val.length - 1), field === field_set.data ? data_cursor : text_cursor);
             }
@@ -130,6 +132,49 @@ export function Assemble(file_dir: string, file_name: string): string {
                     idx += 2;
                 }
                 current += 4;
+            } else if (pseudo_set.includes(in_arr[idx])) {
+                if (in_arr[idx] === 'bgt') {
+                    var rs = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
+                    idx += 4;
+                    var code = '000000' + rt + rs + '0000100000101010';
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    code = '0001010000100000' + ToBin(((offset - current) - 4), 16);
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                } else if (in_arr[idx] === 'blt') {
+                    var rs = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
+                    idx += 4;
+                    var code = '000000' + rs + rt + '0000100000101010';
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    code = '0001010000100000' + ToBin(((offset - current) - 4), 16);
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                } else if (in_arr[idx] === 'bge') {
+                    var rs = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
+                    idx += 4;
+                    var code = '000000' + rt + rs + '0000100000101010';
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    code = '0001000000100000' + ToBin(((offset - current) - 4), 16);
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                } else if (in_arr[idx] === 'ble') {
+                    var rs = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rt = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
+                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
+                    idx += 4;
+                    var code = '000000' + rs + rt + '0000100000101010';
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    code = '0001000000100000' + ToBin(((offset - current) - 4), 16);
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                } else if (in_arr[idx] === 'move') {
+                    var rt = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rs = reg_table[in_arr[idx + 2]];
+                    var code = '000000' + rs + '00000' + rs + '00000100101';
+                    idx += 3;
+                }
             } else if (label_table.has(in_arr[idx].substring(0, in_arr[idx].length - 1))) {
                 idx += 1;
             }

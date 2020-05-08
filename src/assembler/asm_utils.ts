@@ -40,4 +40,3 @@ export const funct_table: { [key: string]: string } = {
     'sll': '000000', 'srl': '000010', 'sub': '100010',
     'slt': '101010', 'jr': '001000'
 };
-

@@ -16,7 +16,7 @@ Still under developing...
   * [x] Input a MIPS machine code in hexadecimal code, output its MIPS assembly program with PC value.
 * Strong requirement
   * [x] Implement a graphical user Interface for your program.
-  * [ ] Supporing pseudo instructions:  Bgt, Bge, Blt, Ble, move,
+  * [X] Supporing pseudo instructions:  Bgt, Bge, Blt, Ble, move,
 
 * Stronger functions
   * [ ] Supporting more instructions such as: Xor, Nor, Sra, Xori, Lb, Sb, Lh, SW, Jalr, ...
