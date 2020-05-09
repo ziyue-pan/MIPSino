@@ -74,21 +74,21 @@ export function Assemble(file_dir: string, file_name: string): string {
                 }
                 idx += 1;
             } else if (inst_set.includes(in_arr[idx])) {
-                if (['and', 'add', 'or', 'sub', 'slt'].includes(in_arr[idx])) {
+                if (['and', 'add', 'or', 'sub', 'slt', 'xor', 'nor'].includes(in_arr[idx])) {
                     var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rs: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 3]];
                     var code: string = '000000' + rs + rt + rd + '00000' + funct_table[in_arr[idx]];
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 4;
-                } else if (in_arr[idx] === 'sll' || in_arr[idx] === 'srl') {
+                } else if (['sll', 'srl', 'sra'].includes(in_arr[idx])) {
                     var rd: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rt: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var shamt: string = parseInt(in_arr[idx + 3]).toString(2).padStart(5, '0');
                     var code: string = '00000000000' + rt + rd + shamt + funct_table[in_arr[idx]];
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 4;
-                } else if (['slti', 'addi', 'ori'].includes(in_arr[idx])) {
+                } else if (['slti', 'addi', 'ori', 'xori'].includes(in_arr[idx])) {
                     var rt: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
                     var rs: string = reg_table[in_arr[idx + 2].substring(0, in_arr[idx + 2].length - 1)];
                     var imm: string = parseInt(in_arr[idx + 3]).toString(2).padStart(16, '0');
@@ -106,7 +106,7 @@ export function Assemble(file_dir: string, file_name: string): string {
                     var code: string = '000000' + rs + '1000'.padStart(21, '0');
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 2;
-                } else if (in_arr[idx] === 'lw' || in_arr[idx] === 'sw') {
+                } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(in_arr[idx])) {
                     var rt: string = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 2].length - 1)];
                     var offset: number = parseInt(in_arr[idx + 2].substring(0, in_arr[idx + 2].lastIndexOf('(') - 1));
                     var base: string = reg_table[in_arr[idx + 2].match(/\(([^)]+)\)/)![1]];
@@ -130,6 +130,12 @@ export function Assemble(file_dir: string, file_name: string): string {
                     var code: string = opcode_table[in_arr[idx]] + target;
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 2;
+                } else if (in_arr[idx] === 'jalr') {
+                    var rs = reg_table[in_arr[idx + 1].substring(0, in_arr[idx + 1].length - 1)];
+                    var rd = reg_table[in_arr[idx + 2]];
+                    var code = '000000' + rs +'00000' + rd + '00000001001';
+                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                    idx += 3;
                 }
                 current += 4;
             } else if (pseudo_set.includes(in_arr[idx])) {
