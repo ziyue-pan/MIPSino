@@ -1,7 +1,8 @@
 export const inst_set: string[] = [
     'add', 'addi', 'and', 'or', 'ori', 'sll', 'srl',
     'sub', 'lui', 'slt', 'slti', 'beq', 'bne',
-    'j', 'jal', 'jr', 'lw', 'sw',
+    'j', 'jal', 'jr', 'lw', 'sw', 'xor', 'nor',
+    'sra', 'xori', 'lb', 'sb', 'lh', 'jalr'
 ];
 
 export const directive_set: string[] = [
@@ -32,11 +33,15 @@ export const opcode_table: { [key: string]: string } = {
     'srl': '000000', 'sub': '000000', 'lui': '001111',
     'slt': '000000', 'slti': '001010', 'beq': '000100',
     'bne': '000101', 'j': '000010', 'jal': '000011',
-    'jr': '000000', 'lw': '100011', 'sw': '101011'
+    'jr': '000000', 'lw': '100011', 'sw': '101011',
+    'xor': '000000', 'nor': '000000', 'sra': '000000',
+    'xori': '001110', 'lb': '100000', 'sb': '101000',
+    'lh': '100001', 'sh': '101001', 'jalr': '000000'
 };
 
 export const funct_table: { [key: string]: string } = {
     'add': '100000', 'and': '100100', 'or': '100101',
     'sll': '000000', 'srl': '000010', 'sub': '100010',
-    'slt': '101010', 'jr': '001000'
+    'slt': '101010', 'jr': '001000', 'xor': '100110',
+    'nor': '100111', 'sra': '000011', 'jalr': '001001'
 };
