@@ -71,6 +71,12 @@
 		"description": "jump and link",
 		"scope": "source.mips"
 	},
+	"jalr": {
+		"prefix": "jalr",
+		"body": "jalr\t${1:\\$t0}, ${2:\\$t1}\t\t# jump to $1 and save position to $rd\n",
+		"description": "jump and link register",
+		"scope": "source.mips"
+	},
 	"jr": {
 		"prefix": "jr",
 		"body": "jr\t\t${1:\\$ra}\t\t\t\t\t# jump to $1\n",
@@ -105,6 +111,12 @@
 		"prefix": "lw",
 		"body": "lw\t\t${1:\\$t1}, ${2:${3:0}(${4:\\$s1})}\t\t# \n",
 		"description": "load word",
+		"scope": "source.mips"
+	},
+	"lh": {
+		"prefix": "lh",
+		"body": "lh\t\t${1:\\$t1}, ${2:${3:0}(${4:\\$s1})}\t\t# \n",
+		"description": "load half word",
 		"scope": "source.mips"
 	},
 	"move": {
