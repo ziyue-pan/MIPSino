@@ -1,8 +1,22 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import {inst_set, directive_set, pseudo_set, reg_set} from '../assembler/asm_utils';
+import { legal_inst, legal_regs } from './check_utils';
+import { no_param, one_param, two_param, three_param } from './check_utils';
 
+function isLabel(word: string): boolean {
+    return word.substr(word.length - 1) === ':';
+}
+
+function isLegalLabel(label: string): boolean {
+    var start = label.charAt(0);
+    var mid = label.substr(1, label.length - 2);
+    return /[a-zA-Z]|_/i.test(start) && /^\w*$/.test(mid);
+}
+
+function isLegalInstruction(first_word: string): boolean {
+    return legal_inst.includes(first_word);
+}
 
 export function updateDiagnostic(doc: vscode.TextDocument, collection: vscode.DiagnosticCollection): boolean {
     var legal: boolean = true;
@@ -28,14 +42,11 @@ export function updateDiagnostic(doc: vscode.TextDocument, collection: vscode.Di
                 if (in_arr[line_idx].replace(/\s/g, '').length) {
                     var words = in_arr[line_idx].replace(/:/g, ':,').split(/,/);
                     for (let i = 0; i < words.length;) {
-                        var word = words[i];
+                        var word = words[i].trim();
 
                         // is label
-                        if (word.trim().substr(word.length - 1) === ':') {
-                            var label = word.trim();
-                            var start = label.charAt(0);
-                            var mid = label.substr(1, label.length - 2);
-                            if (!(/[a-zA-Z]|_/i.test(start) && /^\w*$/.test(mid))) {
+                        if (isLabel(word)) {
+                            if (!isLegalLabel(word)) {
                                 legal = false;
                                 diagnostic.push(new vscode.Diagnostic(
                                     doc.lineAt(line_idx).range,
@@ -45,12 +56,31 @@ export function updateDiagnostic(doc: vscode.TextDocument, collection: vscode.Di
                                 break;
                             }
                             i++;
-                        } else if(){
-
+                        } else if (word.replace(/\s/g, '').length) {    // not label but has something
+                            if (!(isLegalInstruction(word.split(' ')[0]))) {    // not in utils
+                                legal = false;
+                                diagnostic.push(new vscode.Diagnostic(
+                                    doc.lineAt(line_idx).range,
+                                    'No such instruction: ' + word.split(' ')[0],
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                                break;
+                            } else if (no_param.includes(word.split(' ')[0])) {
+                                i++;
+                            } else if (one_param.includes(word.split(' ')[0])) {
+                                i++;
+                            } else if (two_param.includes(word.split(' ')[0])) {
+                                i += 2;
+                            } else if (three_param.includes(word.split(' ')[0])) {
+                                i += 3;
+                            }
+                        } else {
+                            i++;
                         }
                     }
                 }
             });
+            collection.set(doc.uri, diagnostic);
         } else {
             collection.clear();
         }
@@ -58,7 +88,5 @@ export function updateDiagnostic(doc: vscode.TextDocument, collection: vscode.Di
     } else {
         collection.clear();
     }
-
-
     return legal;
 }

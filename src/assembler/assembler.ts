@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { inst_set, directive_set, pseudo_set } from './asm_utils';
 import { opcode_table, funct_table, reg_table } from './asm_utils';
+import { updateDiagnostic } from '../check/diagnostic';
 
 // enum to represent current field
 enum field_set { data, text };
@@ -21,6 +22,7 @@ export function Assemble(file_dir: string, file_name: string): string {
     var data_cursor = 0, text_cursor = 0, data_start = 0, text_start = 0;
 
     var label_table = new Map<string, number>();
+
     try {
         var field: field_set = field_set.data;
         var data_out: string[] = [];
@@ -133,7 +135,7 @@ export function Assemble(file_dir: string, file_name: string): string {
                 } else if (in_arr[idx] === 'jalr') {
                     var rs = reg_table[in_arr[idx + 1]];
                     var rd = reg_table[in_arr[idx + 2]];
-                    var code = '000000' + rs +'00000' + rd + '00000001001';
+                    var code = '000000' + rs + '00000' + rd + '00000001001';
                     text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                     idx += 3;
                 }

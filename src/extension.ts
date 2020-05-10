@@ -5,6 +5,7 @@ import { Disassemble } from './disassembler/disassembler';
 import { updateDiagnostic } from './check/diagnostic';
 
 export function activate(context: vscode.ExtensionContext) {
+	const collections = vscode.languages.createDiagnosticCollection('Assembly Error');
 	let assemble_disposable = vscode.commands.registerCommand('mipsino.ToHex', () => {
 		// vscode.window.showInformationMessage('No I am going to!');
 		// const terminal = (<any>vscode.window).createTerminal({name:'MIPSino Terminal'});
@@ -16,11 +17,15 @@ export function activate(context: vscode.ExtensionContext) {
 		try {
 			var suffix = file_name.substring(file_name.lastIndexOf('.'), file_name.length);
 			if (['.asm', '.s', '.mips'].includes(suffix)) {
-				var assembled_path = Assemble(file_dir, file_name);
-				vscode.window.showInformationMessage('Assembly Done!');
-				vscode.workspace.openTextDocument(assembled_path).then(doc => {
-					vscode.window.showTextDocument(doc);
-				});
+				if (updateDiagnostic(editor!.document, collections)) {
+					var assembled_path = Assemble(file_dir, file_name);
+					vscode.window.showInformationMessage('Assembly Done!');
+					vscode.workspace.openTextDocument(assembled_path).then(doc => {
+						vscode.window.showTextDocument(doc);
+					});
+				} else {
+					vscode.window.showErrorMessage('Assembly Failed!');
+				}
 			} else {
 				vscode.window.showErrorMessage(suffix + ' file can not be assembled');
 			}
@@ -48,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 			console.log('Error:', e.stack);
 		}
 	});
-	const collections = vscode.languages.createDiagnosticCollection('Assembly Error');
+
 	if (vscode.window.activeTextEditor) {
 		updateDiagnostic(vscode.window.activeTextEditor.document, collections);
 	}
