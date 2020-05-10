@@ -42,6 +42,9 @@ Still under developing...
 ## Build
 
 ```bash
-$ git clone https://github.com/PAN-Ziyue/MIPSino
+$ git clone https://github.com/PAN-Ziyue/MIPSino MIPSino
+$ code ./MIPSino
 $ npm install
+$ start debugging in (Extension Development Host)
+
 ```
