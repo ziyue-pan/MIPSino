@@ -27,13 +27,13 @@ Still under developing...
 
 ## Preview:
 
+* **interface & syntax highlighting**
 ![1](./img/1.png)
-<center>interface & syntax highlighting</center><br>
 
 
+* **error checking**
 ![2](./img/2.png)
-<center>error checking</center><br>
 
 
+* **snippet**
 ![3](./img/3.png)
-<center>snippet</center><br>
