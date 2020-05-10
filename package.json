@@ -147,6 +147,7 @@
 		"vscode-test": "^1.3.0",
 		"vscode-debugadapter-testsupport": "1.40.3",
 		"vscode-debugadapter": "1.40.0",
+		"vscode-debugprotocol": "1.40.0",
 		"await-notify": "1.0.1"
 	}
 }
