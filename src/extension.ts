@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-// import {check} from './assembler/check';
+import { ProviderResult } from 'vscode';
 import { Assemble } from './assembler/assembler';
 import { Disassemble } from './disassembler/disassembler';
+import { updateDiagnostic } from './check/ckecker';
 
 export function activate(context: vscode.ExtensionContext) {
 	let assemble_disposable = vscode.commands.registerCommand('mipsino.ToHex', () => {
@@ -47,7 +48,24 @@ export function activate(context: vscode.ExtensionContext) {
 			console.log('Error:', e.stack);
 		}
 	});
+	const collections = vscode.languages.createDiagnosticCollection('Assembly Error');
+	if (vscode.window.activeTextEditor) {
+		updateDiagnostic(vscode.window.activeTextEditor.document, collections);
+	}
+	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((editor) => {
+		if (editor) {
+			updateDiagnostic(editor.document, collections);
+		}
+	}));
+
+
 	context.subscriptions.push(assemble_disposable);
 	context.subscriptions.push(disassemble_disposable);
+
+	// runtime dispose
+
 }
+
+
+
 export function deactivate() { }
