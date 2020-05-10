@@ -26,7 +26,7 @@ export function Assemble(file_dir: string, file_name: string): string {
         var data_out: string[] = [];
         var text_out: string[] = [];
         var in_str = fs.readFileSync(full_path, 'utf-8');
-        var in_arr = in_str.replace(/#.*?\n|\t|\n|#.*?/g, ' ').replace(/:/g, ': ').replace(/,/g, ' ').replace(/(^\s*)|(\s*$)/g, '').split(/\s+(?![^\[]*\]|[^(]*\)|[^\{]*})/);
+        var in_arr = in_str.replace(/#.*?\n|\t|\n|#.*?|,/g, ' ').replace(/:/g, ': ').replace(/(^\s*)|(\s*$)/g, '').split(/\s+(?![^\[]*\]|[^(]*\)|[^\{]*})/);
         in_arr.forEach((val) => {
             if (val === '.data') {
                 data_cursor = data_start = Math.ceil(text_cursor / 4.0) * 4;
