@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ProviderResult } from 'vscode';
 import { Assemble } from './assembler/assembler';
 import { Disassemble } from './disassembler/disassembler';
-import { updateDiagnostic } from './check/ckecker';
+import { updateDiagnostic } from './check/diagnostic';
 
 export function activate(context: vscode.ExtensionContext) {
 	let assemble_disposable = vscode.commands.registerCommand('mipsino.ToHex', () => {
