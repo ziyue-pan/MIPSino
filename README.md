@@ -30,10 +30,18 @@ Still under developing...
 * **interface & syntax highlighting**
 ![1](./img/1.png)
 
-
 * **error checking**
 ![2](./img/2.png)
 
-
 * **snippet**
 ![3](./img/3.png)
+
+* **disassemble**
+![4](./img/4.png)
+
+## Build
+
+```bash
+$ git clone https://github.com/PAN-Ziyue/MIPSino
+$ npm install
+```

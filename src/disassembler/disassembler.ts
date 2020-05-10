@@ -51,12 +51,12 @@ export function Disassemble(file_dir: string, file_name: string): string {
             var opcode = code.substr(0, 6);
             if (opcode === '000000') {
                 var funct = code.substr(26, 6);
-                if (['add', 'and', 'or', 'sub', 'slt'].includes(funct_table[funct])) {
+                if (['add', 'and', 'or', 'sub', 'slt', 'xor', 'nor'].includes(funct_table[funct])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
                     asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt);
-                } else if (['sll', 'srl'].includes(funct_table[funct])) {
+                } else if (['sll', 'srl', 'sra'].includes(funct_table[funct])) {
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
                     var shamt = code.substr(21, 5);
@@ -64,6 +64,10 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 } else if (funct_table[funct] === 'jr') {
                     var rs = reg_table[code.substr(6, 5)];
                     asm_out.push('jr ' + rs);
+                } else if (funct_table[funct] === 'jalr') {
+                    var rs = reg_table[code.substr(6, 5)];
+                    var rd = reg_table[code.substr(16, 5)];
+                    asm_out.push('jalr ' + rd + ', ' + rs);
                 }
             } else {
                 if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
@@ -79,7 +83,7 @@ export function Disassemble(file_dir: string, file_name: string): string {
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
                     asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
-                } else if (['lw', 'sw'].includes(opcode_table[opcode])) {
+                } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(opcode_table[opcode])) {
                     var base = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var offset = ToDec(code.substr(16, 16));
