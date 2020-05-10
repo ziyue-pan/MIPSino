@@ -23,3 +23,17 @@ Still under developing...
   * [ ] Simulate execution of the MIPS assembly program in step-by-step way with a window to show the values of registers.
   * [ ] Simulate execution of the MIPS assembly program from the current MIPS instruction to the end and with a window to show the values of registers.
   * [ ] With reset to initialize the simulation.
+
+
+## Preview:
+
+![1](./img/1.png)
+<center>interface & syntax highlighting</center><br>
+
+
+![2](./img/2.png)
+<center>error checking</center><br>
+
+
+![3](./img/3.png)
+<center>snippet</center><br>
