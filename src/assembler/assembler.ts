@@ -1,12 +1,22 @@
 import * as fs from 'fs';
-import { inst_set, directive_set, pseudo_set } from './asm_utils';
-import { opcode_table, funct_table, reg_table } from './asm_utils';
-import { updateDiagnostic } from '../check/diagnostic';
+import * as vscode from 'vscode';
 
-// enum to represent current field
-enum field_set { data, text };
 
-// function to transfer integer to binary string with givin width
+import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';
+import { mipsLexer } from '../grammar/mipsLexer';
+
+import { mipsParser } from "../grammar/mipsParser";
+import { mipsListener } from "../grammar/mipsListener";
+import { ParseTreeWalker } from "antlr4ts/tree/ParseTreeWalker";
+import {
+    R_typeContext, I_typeContext, J_typeContext, InstContext,
+    IdenContext, DirectiveContext, PseudoContext,
+} from "../grammar/mipsParser";
+
+import { reg_table, funct_table, opcode_table } from './asm_utils';
+
+
+
 function ToBin(dec: number, width: number): string {
     if (dec >= 0) {
         return (dec >>> 0).toString(2).padStart(width, '0');
@@ -15,207 +25,221 @@ function ToBin(dec: number, width: number): string {
     }
 }
 
-// main assembling function
-export function Assemble(file_dir: string, file_name: string): string {
-    var full_path = file_dir + file_name;
-    var assembled_path = file_dir + file_name.substring(0, file_name.lastIndexOf('.')) + '.hex';
-    var data_cursor = 0, text_cursor = 0, data_start = 0, text_start = 0;
 
-    var label_table = new Map<string, number>();
+class FirstScan implements mipsListener {
+    diag_line: number[] = [];
+    diag_msg: string[] = [];
+    program_counter: number = 0;
+    legal: boolean = true;
 
-    try {
-        var field: field_set = field_set.data;
-        var data_out: string[] = [];
-        var text_out: string[] = [];
-        var in_str = fs.readFileSync(full_path, 'utf-8');
-        var in_arr = in_str.replace(/#.*?\n|\t|\n|#.*?|,/g, ' ').replace(/:/g, ': ').replace(/(^\s*)|(\s*$)/g, '').split(/\s+(?![^\[]*\]|[^(]*\)|[^\{]*})/);
-        in_arr.forEach((val) => {
-            if (val === '.data') {
-                data_cursor = data_start = Math.ceil(text_cursor / 4.0) * 4;
-                field = field_set.data;
-            } else if (val === '.text') {
-                text_cursor = text_start = Math.ceil(data_cursor / 4.0) * 4;
-                field = field_set.text;
-            } else if (val === '.byte') {
-                data_cursor += 1;
-            } else if (val === '.half') {
-                data_cursor += 2;
-            } else if (val === '.word') {
-                data_cursor += 4;
-            } else if (inst_set.includes(val) || val === 'move') {
-                text_cursor += 4;
-            } else if (pseudo_set.includes(val)) {
-                text_cursor += 8;
-            } else if (val[val.length - 1] === ':') {
-                label_table.set(val.substring(0, val.length - 1), field === field_set.data ? data_cursor : text_cursor);
-            }
-        });
-
-        var current: number = data_start;
-        for (let idx = 0; idx < in_arr.length;) {
-            if (directive_set.includes(in_arr[idx])) {
-                if (in_arr[idx] === '.data') {
-                    current = data_start;
-                } else if (in_arr[idx] === '.text' && idx < in_arr.length - 1 && in_arr[idx + 1][0] === '0') {
-                    current = text_start;
-                } else if (in_arr[idx] === '.byte') {
-                    idx += 1;
-                    data_out.push(parseInt(in_arr[idx]).toString(16).padStart(2, '0'));
-                } else if (in_arr[idx] === '.half') {
-                    idx += 1;
-                    var half_num = parseInt(in_arr[idx]).toString(16).padStart(4, '0');
-                    data_out.push(half_num.substring(2, 3));
-                    data_out.push(half_num.substring(0, 1));
-                } else if (in_arr[idx] === '.word') {
-                    idx += 1;
-                    var word_num = parseInt(in_arr[idx]).toString(16).padStart(8, '0');
-                    data_out.push(word_num.substring(6, 7));
-                    data_out.push(word_num.substring(4, 5));
-                    data_out.push(word_num.substring(2, 3));
-                    data_out.push(word_num.substring(0, 1));
-                }
-                idx += 1;
-            } else if (inst_set.includes(in_arr[idx])) {
-                if (['and', 'add', 'or', 'sub', 'slt', 'xor', 'nor'].includes(in_arr[idx])) {
-                    var rd: string = reg_table[in_arr[idx + 1]];
-                    var rs: string = reg_table[in_arr[idx + 2]];
-                    var rt: string = reg_table[in_arr[idx + 3]];
-                    var code: string = '000000' + rs + rt + rd + '00000' + funct_table[in_arr[idx]];
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 4;
-                } else if (['sll', 'srl', 'sra'].includes(in_arr[idx])) {
-                    var rd: string = reg_table[in_arr[idx + 1]];
-                    var rt: string = reg_table[in_arr[idx + 2]];
-                    var shamt: string = parseInt(in_arr[idx + 3]).toString(2).padStart(5, '0');
-                    var code: string = '00000000000' + rt + rd + shamt + funct_table[in_arr[idx]];
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 4;
-                } else if (['slti', 'addi', 'ori', 'xori'].includes(in_arr[idx])) {
-                    var rt: string = reg_table[in_arr[idx + 1]];
-                    var rs: string = reg_table[in_arr[idx + 2]];
-                    var imm: string = parseInt(in_arr[idx + 3]).toString(2).padStart(16, '0');
-                    var code: string = opcode_table[in_arr[idx]] + rs + rt + imm;
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 4;
-                } else if (in_arr[idx] === 'lui') {
-                    var rt: string = reg_table[in_arr[idx + 1]];
-                    var imm: string = parseInt(in_arr[idx + 3]).toString(2).padStart(16, '0');
-                    var code: string = '00111100000' + rt + imm;
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 3;
-                } else if (in_arr[idx] === 'jr') {
-                    var rs: string = reg_table[in_arr[idx + 1]];
-                    var code: string = '000000' + rs + '1000'.padStart(21, '0');
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 2;
-                } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(in_arr[idx])) {
-                    var rt: string = reg_table[in_arr[idx + 1]];
-                    var offset: number = parseInt(in_arr[idx + 2].substring(0, in_arr[idx + 2].lastIndexOf('(')));
-                    var base: string = reg_table[in_arr[idx + 2].match(/\(([^)]+)\)/)![1]];
-                    var code: string = opcode_table[in_arr[idx]] + base + rt + offset.toString(2).padStart(16, '0');
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 3;
-                } else if (in_arr[idx] === 'beq' || in_arr[idx] === 'bne') {
-                    var rs: string = reg_table[in_arr[idx + 1]];
-                    var rt: string = reg_table[in_arr[idx + 2]];
-                    var offset: number = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    var code: string = opcode_table[in_arr[idx]] + rs + rt + ToBin(((offset - current) - 4), 16);
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 4;
-                } else if (in_arr[idx] === 'j' || in_arr[idx] === 'jal') {
-                    var target: string;
-                    if (label_table.has(in_arr[idx + 1])) {
-                        target = (label_table.get(in_arr[idx + 1])! / 4).toString(2).padStart(26, '0');
-                    } else {
-                        target = (parseInt(in_arr[idx + 1]) / 4).toString(2).padStart(26, '0');
-                    }
-                    var code: string = opcode_table[in_arr[idx]] + target;
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 2;
-                } else if (in_arr[idx] === 'jalr') {
-                    var rs = reg_table[in_arr[idx + 1]];
-                    var rd = reg_table[in_arr[idx + 2]];
-                    var code = '000000' + rs + '00000' + rd + '00000001001';
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    idx += 3;
-                }
-                current += 4;
-            } else if (pseudo_set.includes(in_arr[idx])) {
-                if (in_arr[idx] === 'bgt') {
-                    var rs = reg_table[in_arr[idx + 1]];
-                    var rt = reg_table[in_arr[idx + 2]];
-                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    idx += 4;
-                    current += 8;
-                    var code1 = '000000' + rt + rs + '0000100000101010';
-                    text_out.push(parseInt(code1, 2).toString(16).padStart(8, '0'));
-                    var code2 = '0001010000100000' + ToBin(((offset - current) - 4), 16);
-                    text_out.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
-                } else if (in_arr[idx] === 'blt') {
-                    var rs = reg_table[in_arr[idx + 1]];
-                    var rt = reg_table[in_arr[idx + 2]];
-                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    idx += 4;
-                    current += 8;
-                    var code = '000000' + rs + rt + '0000100000101010';
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    code = '0001010000100000' + ToBin(((offset - current) - 4), 16);
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                } else if (in_arr[idx] === 'bge') {
-                    var rs = reg_table[in_arr[idx + 1]];
-                    var rt = reg_table[in_arr[idx + 2]];
-                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    idx += 4;
-                    current += 8;
-                    var code = '000000' + rt + rs + '0000100000101010';
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    code = '0001000000100000' + ToBin(((offset - current) - 4), 16);
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                } else if (in_arr[idx] === 'ble') {
-                    var rs = reg_table[in_arr[idx + 1]];
-                    var rt = reg_table[in_arr[idx + 2]];
-                    var offset = label_table.has(in_arr[idx + 3]) ? label_table.get(in_arr[idx + 3])! : parseInt(in_arr[idx + 3]);
-                    idx += 4;
-                    current += 8;
-                    var code = '000000' + rs + rt + '0000100000101010';
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                    code = '0001000000100000' + ToBin(((offset - current) - 4), 16);
-                    text_out.push(parseInt(code, 2).toString(16).padStart(8, '0'));
-                } else if (in_arr[idx] === 'move') {
-                    var rt = reg_table[in_arr[idx + 1]];
-                    var rs = reg_table[in_arr[idx + 2]];
-                    var code = '000000' + rs + '00000' + rs + '00000100101';
-                    idx += 3;
-                    current += 4;
-                }
-            } else if (label_table.has(in_arr[idx].substring(0, in_arr[idx].length - 1))) {
-                idx += 1;
-            }
-        }
-
-        // output to .hex file
-        var outstream = fs.createWriteStream(assembled_path);
-        outstream.on('error', (err) => {
-            throw err;
-        });
-        if (text_start > data_start) {
-            data_out.forEach((i) => {
-                outstream.write(i + '\n');
-            });
-            text_out.forEach((i) => {
-                outstream.write(i + '\n');
-            });
+    label_table: Map<string, number> = new Map();
+    enterIden(ctx: IdenContext) {
+        if (this.label_table.has(ctx.text)) {
+            this.legal = false;
+            this.diag_line.push(ctx.start.line);
+            this.diag_msg.push('Duplicate Labels: ' + ctx.text);
         } else {
-            text_out.forEach((i) => {
-                outstream.write(i + '\n');
-            });
-            data_out.forEach((i) => {
-                outstream.write(i + '\n');
-            });
+            this.label_table.set(ctx.text, this.program_counter);
         }
-        outstream.end();
-    } catch (e) {
-        console.log('Error:', e.stack);
     }
-    return assembled_path;
+
+    enterDirective(ctx: DirectiveContext) {
+        var op = ctx._op.text;
+        if (op) {
+            if (op === '.byte') {
+                this.program_counter += 1;
+            } else if (op === '.half') {
+                this.program_counter += 2;
+            } else if (op === '.word') {
+                this.program_counter += 4;
+            }
+        }
+    }
+
+    enterPseudo(ctx: PseudoContext) {
+        var op = ctx._op.text;
+        if (op) {
+            if (op === 'move') {
+                this.program_counter += 4;
+            } else if (['bgt', 'bge', 'ble', 'blt'].includes(op)) {
+                this.program_counter += 8;
+            }
+        }
+    }
+
+    enterR_type(ctx: R_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            this.program_counter += 4;
+        }
+    }
 }
+
+class SecondScan implements mipsListener {
+    program_counter: number = 0;
+    label_table: Map<string, number> = new Map();
+    output: string[] = [];
+
+    enterDirective(ctx: DirectiveContext) {
+        var op = ctx._op.text;
+        if (op === '.word') {
+            var data = ctx._data.text;
+            this.output.push(parseInt(data, 2).toString(16).padStart(8, '0'));
+            this.program_counter + 4;
+        } else if (op === '.byte') {
+            this.program_counter + 1;
+        } else if (op === '.half') {
+            this.program_counter + 2;
+        }
+    }
+
+    enterPseudo(ctx: PseudoContext) {
+        var op = ctx._op.text;
+        if (op) {
+
+        }
+    }
+
+    enterR_type(ctx: R_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            if (['and', 'addu', 'add', 'or', 'sub', 'slt', 'xor', 'nor', 'subu'].includes(op)) {
+                var rd = reg_table[ctx._rd.text];
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var code = '000000' + rs + rt + rd + '00000' + funct_table[op];
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (['sll', 'srl', 'sra'].includes(op)) {
+                var rd = reg_table[ctx._rd.text];
+                var rt = reg_table[ctx._rt.text];
+                var shamt = parseInt(ctx._sa.text).toString(2).padStart(5, '0');
+                var code = '00000000000' + rt + rd + shamt + funct_table[op];
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            }
+            this.program_counter += 4;
+        }
+    }
+
+    enterI_type(ctx: I_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            if (['addi', 'slti'].includes(op)) {
+                var rt = reg_table[ctx._rt.text];
+                var rs = reg_table[ctx._rs.text];
+                var imm = parseInt(ctx._simm.text).toString(2).padStart(16, '0');
+                var code = opcode_table[op] + rs + rt + imm;
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (['addiu', 'andi', 'sltiu', 'ori', 'xori'].includes(op)) {
+                var rt = reg_table[ctx._rt.text];
+                var rs = reg_table[ctx._rs.text];
+                var imm = parseInt(ctx._uimm.text).toString(2).padStart(16, '0');
+                var code = opcode_table[op] + rs + rt + imm;
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (op === 'lui') {
+                var rt = reg_table[ctx._rt.text];
+                var imm = parseInt(ctx._uimm.text).toString(2).padStart(16, '0');
+                var code = '00111100000' + rt + imm;
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(op)) {
+                var rt = reg_table[ctx._rt.text];
+                var base = reg_table[ctx._base.text];
+                var offset = parseInt(ctx._offset.text).toString(2).padStart(16, '0');
+                var code = opcode_table[op] + base + rt + offset;
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (op === 'beq' || op === 'bne') {
+                var rt = reg_table[ctx._rt.text];
+                var rs = reg_table[ctx._rs.text];
+                var addr = this.label_table.get(ctx._tag.text);
+                var code = opcode_table[op] + rs + rt + ToBin(((addr! - this.program_counter) - 4), 16);
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            }
+            this.program_counter += 4;
+        }
+    }
+
+    enterJ_type(ctx: J_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            if (op === 'jalr') {
+                var rs = reg_table[ctx._rs.text];
+                var code = '000000' + rs + '00000' + '11111' + '00000001001';
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (op === 'jr') {
+                var rs = reg_table[ctx._rs.text];
+                var code = '000000' + rs + '1000'.padStart(21, '0');
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            } else if (op === 'j' || op === 'jal') {
+                var addr = this.label_table.get(ctx._tag.text)!.toString(2).padStart(26, '0');
+                var code = opcode_table[op] + addr;
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+            }
+            this.program_counter += 4;
+        }
+    }
+}
+
+export function Assemble(doc: vscode.TextDocument, collection: vscode.DiagnosticCollection): boolean {
+    var legal: boolean = true;
+
+    var full_path = doc.fileName;
+    var input = fs.readFileSync(full_path, 'utf-8');
+
+    let input_stream = new ANTLRInputStream(input);
+    let lexer = new mipsLexer(input_stream);
+    let token_stream = new CommonTokenStream(lexer);
+    let parser = new mipsParser(token_stream);
+
+    let diagnostic: vscode.Diagnostic[] = [];
+
+    parser.addErrorListener({
+        syntaxError: (recognizer, offendingSymbol, line, column, msg, err) => {
+            let new_diag = new vscode.Diagnostic(
+                doc.lineAt(line - 1).range,
+                msg,
+                vscode.DiagnosticSeverity.Error
+            );
+            diagnostic.push(new_diag);
+        }
+    });
+
+    let tree = parser.prog();
+
+    let first_scan: mipsListener = new FirstScan();
+    let walker = new ParseTreeWalker();
+
+    walker.walk(first_scan, tree);
+    legal = parser.numberOfSyntaxErrors === 0 && first_scan.legal!;
+    for (var i = 0; i < first_scan.diag_line!.length; i++) {
+        let new_diag = new vscode.Diagnostic(
+            doc.lineAt(first_scan.diag_line![i] - 1).range,
+            first_scan.diag_msg![i],
+            vscode.DiagnosticSeverity.Error
+        );
+        diagnostic.push(new_diag);
+    }
+
+    if (legal) {
+        let second_scan: mipsListener = new SecondScan();
+        second_scan.label_table = first_scan.label_table;
+        walker.walk(second_scan, tree);
+        second_scan.output!.forEach((val) => {
+            console.log(val);
+        });
+        console.log('succeed');
+        collection.clear();
+    } else {
+        console.log('error!');
+        collection.set(doc.uri, diagnostic);
+    }
+
+    return legal;
+}
+
+
+
+// diag_line?: number[];
+// diag_msg?: string[];
+// program_counter: number;
+// legal?: boolean;
+// label_table: Map<string, number>;
+// output?: string[];
