@@ -9,7 +9,7 @@ import { mipsParser } from "../grammar/mipsParser";
 import { mipsListener } from "../grammar/mipsListener";
 import { ParseTreeWalker } from "antlr4ts/tree/ParseTreeWalker";
 import {
-    R_typeContext, I_typeContext, J_typeContext, InstContext,
+    R_typeContext, I_typeContext, J_typeContext, LabelContext,
     IdenContext, DirectiveContext, PseudoContext,
 } from "../grammar/mipsParser";
 
@@ -33,13 +33,13 @@ class FirstScan implements mipsListener {
     legal: boolean = true;
 
     label_table: Map<string, number> = new Map();
-    enterIden(ctx: IdenContext) {
-        if (this.label_table.has(ctx.text)) {
+    enterLabel(ctx: LabelContext) {
+        if (this.label_table.has(ctx.iden().text)) {
             this.legal = false;
             this.diag_line.push(ctx.start.line);
-            this.diag_msg.push('Duplicate Labels: ' + ctx.text);
+            this.diag_msg.push('Duplicate Labels: ' + ctx.iden().text);
         } else {
-            this.label_table.set(ctx.text, this.program_counter);
+            this.label_table.set(ctx.iden().text, this.program_counter);
         }
     }
 
@@ -96,7 +96,49 @@ class SecondScan implements mipsListener {
     enterPseudo(ctx: PseudoContext) {
         var op = ctx._op.text;
         if (op) {
-
+            if(op==='move') {
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var code = '000000' + rs + '00000' + rt + '00000100101';
+                this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
+                this.program_counter += 4;
+            } else if(op==='bgt') {
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var addr = this.label_table.get(ctx._tag.text);
+                var code1 = '000000' + rt + rs + '0000100000101010';
+                this.output.push(parseInt(code1, 2).toString(16).padStart(8, '0'));
+                var code2 = '0001010000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
+                this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
+                this.program_counter += 8;
+            } else if(op==='blt') {
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var addr = this.label_table.get(ctx._tag.text);
+                var code1 = '000000' + rs + rt + '0000100000101010';
+                this.output.push(parseInt(code1, 2).toString(16).padStart(8, '0'));
+                var code2 = '0001010000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
+                this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
+                this.program_counter += 8;
+            } else if(op==='bge') {
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var addr = this.label_table.get(ctx._tag.text);
+                var code1 = '000000' + rt + rs + '0000100000101010';
+                this.output.push(parseInt(code1, 2).toString(16).padStart(8, '0'));
+                var code2 = '0001000000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
+                this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
+                this.program_counter += 8;
+            } else if(op==='ble') {
+                var rs = reg_table[ctx._rs.text];
+                var rt = reg_table[ctx._rt.text];
+                var addr = this.label_table.get(ctx._tag.text);
+                var code1 = '000000' + rs + rt + '0000100000101010';
+                this.output.push(parseInt(code1, 2).toString(16).padStart(8, '0'));
+                var code2 = '0001000000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
+                this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
+                this.program_counter += 8;
+            }
         }
     }
 
