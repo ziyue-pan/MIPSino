@@ -96,13 +96,13 @@ class SecondScan implements mipsListener {
     enterPseudo(ctx: PseudoContext) {
         var op = ctx._op.text;
         if (op) {
-            if(op==='move') {
+            if (op === 'move') {
                 var rs = reg_table[ctx._rs.text];
                 var rt = reg_table[ctx._rt.text];
                 var code = '000000' + rs + '00000' + rt + '00000100101';
                 this.output.push(parseInt(code, 2).toString(16).padStart(8, '0'));
                 this.program_counter += 4;
-            } else if(op==='bgt') {
+            } else if (op === 'bgt') {
                 var rs = reg_table[ctx._rs.text];
                 var rt = reg_table[ctx._rt.text];
                 var addr = this.label_table.get(ctx._tag.text);
@@ -111,7 +111,7 @@ class SecondScan implements mipsListener {
                 var code2 = '0001010000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
                 this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
                 this.program_counter += 8;
-            } else if(op==='blt') {
+            } else if (op === 'blt') {
                 var rs = reg_table[ctx._rs.text];
                 var rt = reg_table[ctx._rt.text];
                 var addr = this.label_table.get(ctx._tag.text);
@@ -120,7 +120,7 @@ class SecondScan implements mipsListener {
                 var code2 = '0001010000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
                 this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
                 this.program_counter += 8;
-            } else if(op==='bge') {
+            } else if (op === 'bge') {
                 var rs = reg_table[ctx._rs.text];
                 var rt = reg_table[ctx._rt.text];
                 var addr = this.label_table.get(ctx._tag.text);
@@ -129,7 +129,7 @@ class SecondScan implements mipsListener {
                 var code2 = '0001000000100000' + ToBin(((addr! - this.program_counter) - 4), 16);
                 this.output.push(parseInt(code2, 2).toString(16).padStart(8, '0'));
                 this.program_counter += 8;
-            } else if(op==='ble') {
+            } else if (op === 'ble') {
                 var rs = reg_table[ctx._rs.text];
                 var rt = reg_table[ctx._rt.text];
                 var addr = this.label_table.get(ctx._tag.text);
@@ -264,11 +264,23 @@ export function Assemble(doc: vscode.TextDocument, collection: vscode.Diagnostic
         let second_scan: mipsListener = new SecondScan();
         second_scan.label_table = first_scan.label_table;
         walker.walk(second_scan, tree);
-        second_scan.output!.forEach((val) => {
-            console.log(val);
+        // second_scan.output!.forEach((val) => {
+        //     console.log(val);
+        // });
+        // console.log('succeed');
+        var final_path = full_path.substring(0, full_path.lastIndexOf('.')) + '.hex';
+        var out_stream = fs.createWriteStream(final_path);
+        out_stream.on('error', (err) => {
+            throw err;
         });
-        console.log('succeed');
+        second_scan.output!.forEach((val) => {
+            out_stream.write(val + '\n');
+        });
+        out_stream.end();
         collection.clear();
+        vscode.workspace.openTextDocument(final_path).then(doc => {
+            vscode.window.showTextDocument(doc);
+        });
     } else {
         console.log('error!');
         collection.set(doc.uri, diagnostic);

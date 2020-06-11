@@ -51,51 +51,56 @@ export function Disassemble(file_dir: string, file_name: string): string {
             var opcode = code.substr(0, 6);
             if (opcode === '000000') {
                 var funct = code.substr(26, 6);
-                if (['add', 'and', 'or', 'sub', 'slt', 'xor', 'nor'].includes(funct_table[funct])) {
+                if (['add', 'and', 'or', 'sub', 'slt', 'xor', 'nor', 'addu', 'subu'].includes(funct_table[funct])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rs + ', ' + rt);
+                    asm_out.push(funct_table[funct] + '\t' + rd + ',\t' + rs + ',\t' + rt);
                 } else if (['sll', 'srl', 'sra'].includes(funct_table[funct])) {
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
                     var shamt = code.substr(21, 5);
-                    asm_out.push(funct_table[funct] + ' ' + rd + ', ' + rt + ', ' + shamt);
+                    asm_out.push(funct_table[funct] + '\t' + rd + ',\t' + rt + ',\t' + shamt);
                 } else if (funct_table[funct] === 'jr') {
                     var rs = reg_table[code.substr(6, 5)];
                     asm_out.push('jr ' + rs);
                 } else if (funct_table[funct] === 'jalr') {
                     var rs = reg_table[code.substr(6, 5)];
                     var rd = reg_table[code.substr(16, 5)];
-                    asm_out.push('jalr ' + rd + ', ' + rs);
+                    asm_out.push('jalr ' + rd + ',\t' + rs);
                 }
             } else {
-                if (['addi', 'ori', 'slti'].includes(opcode_table[opcode])) {
+                if (['addiu', 'ori', 'xori', 'sltiu', 'andi'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var imm = parseInt(code.substr(16, 16), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + rs + ', ' + imm);
+                    asm_out.push(opcode_table[opcode] + '\t' + rt + ',\t' + rs + ',\t' + imm);  
+                } else if(['addi', 'slti'].includes(opcode_table[opcode])){
+                    var rs = reg_table[code.substr(6, 5)];
+                    var rt = reg_table[code.substr(11, 5)];
+                    var imm = ToDec(code.substr(16, 16)); 
+                    asm_out.push(opcode_table[opcode] + '\t' + rt + ',\t' + rs + ',\t' + imm);
                 } else if (['beq', 'bne'].includes(opcode_table[opcode])) {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var label = label_table.get(ToDec(code.substr(16, 16)) + 4 * idx + 4);
-                    asm_out.push(opcode_table[opcode] + ' ' + rs + ', ' + rt + ', ' + label);
+                    asm_out.push(opcode_table[opcode] + '\t' + rs + ',\t' + rt + ',\t' + label);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
-                    asm_out.push(opcode_table[opcode] + ' ' + label_table.get(target * 4));
+                    asm_out.push(opcode_table[opcode] + '\t' + label_table.get(target * 4));
                 } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(opcode_table[opcode])) {
                     var base = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var offset = ToDec(code.substr(16, 16));
-                    asm_out.push(opcode_table[opcode] + ' ' + rt + ', ' + offset + '(' + base + ')');
+                    asm_out.push(opcode_table[opcode] + '\t' + rt + ',\t' + offset + '(' + base + ')');
                 } else if (opcode_table[opcode] === 'lui') {
                     var rt = reg_table[code.substr(11, 5)];
                     var imm = ToDec(code.substr(16, 16)) << 16;
-                    asm_out.push('lui ' + rt + ', ' + imm);
-                }
+                    asm_out.push('lui\t' + rt + ',\t' + imm);
+                }     
             }
         });
-
+               
         var outstream = fs.createWriteStream(disassembled_path);
         outstream.on('error', (err) => {
             throw err;
@@ -105,7 +110,7 @@ export function Disassemble(file_dir: string, file_name: string): string {
             if (val.substr(val.length - 1, 1) === ':') {
                 outstream.write(val + '\n');
             } else {
-                outstream.write(val + ' # PC-Value: ' + idx + '\n');
+                outstream.write(val + '\t\t# PC-Value:\t' + idx + '\n');
                 idx += 4;
             }
         });
