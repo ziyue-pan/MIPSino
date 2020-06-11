@@ -23,10 +23,10 @@ directive:
 
 pseudo:
 	op = 'move' rt = reg ',' rs = reg
-	| op = 'bgt' rs = reg ',' rt = reg ',' tag = iden
-	| op = 'blt' rs = reg ',' rt = reg ',' tag = iden
-	| op = 'bge' rs = reg ',' rt = reg ',' tag = iden
-	| op = 'ble' rs = reg ',' rt = reg ',' tag = iden;
+	| op = 'bgt' rs = reg ',' rt = reg ',' tag = IDEN
+	| op = 'blt' rs = reg ',' rt = reg ',' tag = IDEN
+	| op = 'bge' rs = reg ',' rt = reg ',' tag = IDEN
+	| op = 'ble' rs = reg ',' rt = reg ',' tag = IDEN;
 
 r_type:
 	op = 'add' rd = reg ',' rs = reg ',' rt = reg
@@ -57,21 +57,25 @@ i_type:
 	| op = 'sw' rt = reg ',' offset = signed_imm '(' base = reg ')'
 	| op = 'sh' rt = reg ',' offset = signed_imm '(' base = reg ')'
 	| op = 'sb' rt = reg ',' offset = signed_imm '(' base = reg ')'
-	| op = 'beq' rs = reg ',' rt = reg ',' tag = iden
-	| op = 'bne' rs = reg ',' rt = reg ',' tag = iden;
+	| op = 'beq' rs = reg ',' rt = reg ',' tag = IDEN
+	| op = 'bne' rs = reg ',' rt = reg ',' tag = IDEN;
 
 j_type:
 	op = 'jalr' rs = reg
 	| op = 'jr' rs = reg
-	| op = 'j' tag = iden
-	| op = 'jal' tag = iden;
+	| op = 'j' tag = IDEN
+	| op = 'jal' tag = IDEN;
 
 COMMENT: '#' .*? NEWLINE -> skip;
 NEWLINE: [\r\n]+;
 
-label: iden ':';
+label: IDEN ':';
 
-iden: ALPHA | NUM | ALPHA iden | NUM iden | '_' iden;
+IDEN: LETTER ( LETTER | DIGIT )* ;
+
+DIGIT: [0-9];
+LETTER: [a-zA-Z_];
+
 
 WS: [ \t]+ -> skip;
 NUM: '0' | [1-9][0-9]*;

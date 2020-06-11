@@ -1,8 +1,13 @@
-export const inst_set: string[] = [
-    'add', 'addi', 'and', 'or', 'ori', 'sll', 'srl',
-    'sub', 'lui', 'slt', 'slti', 'beq', 'bne',
-    'j', 'jal', 'jr', 'lw', 'sw', 'xor', 'nor',
-    'sra', 'xori', 'lb', 'sb', 'lh', 'sh', 'jalr'
+export const resered_word: string[] = [
+    'byte', 'half', 'word', 'data', 'text',
+    'bgt',  'bge',  'blt',  'ble',  'move',
+    'add',  'addi', 'and',  'or',   'ori',
+    'srl',  'sub',  'subu', 'sll',  'jalr',
+    'lui',  'slt',  'slti', 'lh',   'sh', 
+    'beq',  'bne',  'j',    'jal',  'addu', 
+    'addiu','sltiu','andi', 'jr',   'lw', 
+    'sw',   'xor',  'nor',  'sra',  'xori', 
+    'lb', 'sb'
 ];
 
 export const directive_set: string[] = [

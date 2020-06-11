@@ -12,7 +12,6 @@ import { R_typeContext } from "./mipsParser";
 import { I_typeContext } from "./mipsParser";
 import { J_typeContext } from "./mipsParser";
 import { LabelContext } from "./mipsParser";
-import { IdenContext } from "./mipsParser";
 import { Unsigned_immContext } from "./mipsParser";
 import { Signed_immContext } from "./mipsParser";
 import { RegContext } from "./mipsParser";
@@ -23,6 +22,7 @@ import { RegContext } from "./mipsParser";
  * `mipsParser`.
  */
 export interface mipsListener extends ParseTreeListener {
+
 	diag_line?: number[];
 	diag_msg?: string[];
 	program_counter: number;
@@ -127,17 +127,6 @@ export interface mipsListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitLabel?: (ctx: LabelContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `mipsParser.iden`.
-	 * @param ctx the parse tree
-	 */
-	enterIden?: (ctx: IdenContext) => void;
-	/**
-	 * Exit a parse tree produced by `mipsParser.iden`.
-	 * @param ctx the parse tree
-	 */
-	exitIden?: (ctx: IdenContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `mipsParser.unsigned_imm`.

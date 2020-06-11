@@ -55,7 +55,7 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     var rs = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
-                    asm_out.push(funct_table[funct] + '\t' + rd + ',\t' + rs + ',\t' + rt);
+                    asm_out.push(funct_table[funct] + '   \t' + rd + ',\t' + rs + ',\t' + rt);
                 } else if (['sll', 'srl', 'sra'].includes(funct_table[funct])) {
                     var rt = reg_table[code.substr(11, 5)];
                     var rd = reg_table[code.substr(16, 5)];
@@ -87,7 +87,7 @@ export function Disassemble(file_dir: string, file_name: string): string {
                     asm_out.push(opcode_table[opcode] + '\t' + rs + ',\t' + rt + ',\t' + label);
                 } else if (['j', 'jal'].includes(opcode_table[opcode])) {
                     var target = parseInt(code.substr(6, 26), 2);
-                    asm_out.push(opcode_table[opcode] + '\t' + label_table.get(target * 4));
+                    asm_out.push(opcode_table[opcode] + '  \t' + label_table.get(target * 4));
                 } else if (['lw', 'sw', 'lb', 'sb', 'lh', 'sh'].includes(opcode_table[opcode])) {
                     var base = reg_table[code.substr(6, 5)];
                     var rt = reg_table[code.substr(11, 5)];
