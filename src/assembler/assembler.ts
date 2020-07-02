@@ -76,6 +76,21 @@ class FirstScan implements mipsListener {
             this.program_counter += 4;
         }
     }
+
+    enterI_type(ctx: I_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            this.program_counter += 4;
+        }
+    }
+
+    enterJ_type(ctx: J_typeContext) {
+        var op = ctx._op.text;
+        if (op) {
+            this.program_counter += 4;
+        }
+    }
+
 }
 
 class SecondScan implements mipsListener {
