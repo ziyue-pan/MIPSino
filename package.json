@@ -1,7 +1,9 @@
 {
   "name": "mipsino",
+  "publisher": "Raymond-Ziyue",
   "displayName": "MIPSino",
   "description": "",
+  "repository": "https://github.com/PAN-Ziyue/MIPSino",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.45.0"
